@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext'
 import JobCard from '../components/JobCard'
 import JobFilters from '../components/JobFilters'
 import ProfileCard from '../components/ProfileCard'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import useDebounce from '../hooks/useDebounce'
 import Cookies from 'js-cookie'
-import { BsSearch } from 'react-icons/bs'
+import { BsSearch, BsX } from 'react-icons/bs'
+import { FiFilter } from 'react-icons/fi'
 
 const apiStatusConstants = {
   initial: 'INITIAL',
@@ -101,7 +102,6 @@ const Jobs = () => {
 
         const data = await response.json()
         
-        // Transform the API data to match our component's expectations
         const transformedJobs = data.jobs.map(job => ({
           id: job.id,
           title: job.title,
@@ -111,7 +111,7 @@ const Jobs = () => {
           location: job.location,
           package_per_annum: job.package_per_annum,
           rating: job.rating,
-          skills: job.skills || [] // Ensure skills is always an array
+          skills: job.skills || []
         }))
 
         setJobs(transformedJobs)
@@ -141,49 +141,68 @@ const Jobs = () => {
     }
   }
 
+  const clearSearch = () => {
+    setSearchTerm('')
+    setApiStatus(apiStatusConstants.initial)
+  }
+
   const renderLoadingView = () => (
     <div className="flex items-center justify-center min-h-screen" data-testid="loader">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"
+      ></motion.div>
     </div>
   )
 
   const renderFailureView = () => (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="flex flex-col items-center justify-center min-h-screen p-4"
+    >
       <img
         src="https://assets.ccbp.in/frontend/react-js/failure-img.png"
         alt="failure view"
-        className="w-64 mb-4"
+        className="w-64 mb-6"
       />
-      <h1 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">
         Oops! Something Went Wrong
       </h1>
-      <p className="text-gray-600 dark:text-gray-300 mb-4 text-center">
+      <p className="text-gray-600 dark:text-gray-300 mb-6 text-center max-w-md">
         We cannot seem to fetch the jobs. Please try again.
       </p>
-      <button
+      <motion.button
         onClick={handleRetry}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md shadow-md"
         data-testid="button"
       >
         Retry
-      </button>
-    </div>
+      </motion.button>
+    </motion.div>
   )
 
   const renderNoJobsView = () => (
-    <div className="text-center py-12">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="text-center py-12"
+    >
       <img
         src="https://assets.ccbp.in/frontend/react-js/no-jobs-img.png"
         alt="no jobs"
-        className="w-48 mx-auto mb-4"
+        className="w-48 mx-auto mb-6"
       />
-      <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <h3 className="text-2xl font-medium text-gray-700 dark:text-gray-300 mb-3">
         No Jobs Found
       </h3>
-      <p className="text-gray-500 dark:text-gray-400">
-        We could not find any jobs. Try other filters.
+      <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+        We could not find any jobs matching your criteria. Try adjusting your filters or search terms.
       </p>
-    </div>
+    </motion.div>
   )
 
   const renderJobsList = () => (
@@ -202,44 +221,48 @@ const Jobs = () => {
   const renderSuccessView = () => (
     <div className="lg:w-3/4">
       <div className="mb-6 lg:hidden">
-        <button
+        <motion.button
           onClick={() => setShowFilters(!showFilters)}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md flex items-center justify-center"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md flex items-center justify-center shadow-md"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 mr-2"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <FiFilter className="h-5 w-5 mr-2" />
           {showFilters ? 'Hide Filters' : 'Show Filters'}
-        </button>
+        </motion.button>
       </div>
-      <div className="mb-6">
-        <div className="relative">
+      <div className="mb-8">
+        <motion.div 
+          className="relative"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            <BsSearch className="h-5 w-5" />
+          </div>
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Search by company, role, or keyword"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleSearch}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white shadow-sm"
           />
-          <button
-            type="button"
-            onClick={() => setApiStatus(apiStatusConstants.initial)}
-            className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-            data-testid="searchButton"
-          >
-            <BsSearch className="h-5 w-5" />
-          </button>
-        </div>
+          {searchTerm && (
+            <motion.button
+              type="button"
+              onClick={clearSearch}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              aria-label="Clear search"
+            >
+              <BsX className="h-6 w-6" />
+            </motion.button>
+          )}
+        </motion.div>
       </div>
       {jobs.length === 0 ? renderNoJobsView() : renderJobsList()}
     </div>
@@ -260,20 +283,37 @@ const Jobs = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-1/4">
-          <div className="lg:sticky lg:top-4 space-y-6">
-            <ProfileCard />
-            <JobFilters
-              employmentTypes={employmentTypes}
-              salaryRange={salaryRange}
-              toggleEmploymentType={toggleEmploymentType}
-              setSalaryRange={setSalaryRange}
-              showFilters={showFilters}
-              setShowFilters={setShowFilters}
-              employmentTypesList={employmentTypesList}
-              salaryRangesList={salaryRangesList}
-            />
+          <div className="lg:sticky lg:top-12 space-y-8">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ProfileCard />
+            </motion.div>
+            <AnimatePresence>
+              {(showFilters || window.innerWidth >= 1024) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <JobFilters
+                    employmentTypes={employmentTypes}
+                    salaryRange={salaryRange}
+                    toggleEmploymentType={toggleEmploymentType}
+                    setSalaryRange={setSalaryRange}
+                    showFilters={showFilters}
+                    setShowFilters={setShowFilters}
+                    employmentTypesList={employmentTypesList}
+                    salaryRangesList={salaryRangesList}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
         {renderJobs()}
